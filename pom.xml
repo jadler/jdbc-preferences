@@ -30,7 +30,7 @@
 
     <scm>
         <connection>scm:git:git://github.com/jadler/jdbc-preferences.git</connection>
-        <developerConnection>scm:git:ssh://github.com:jadler/jdbc-preferences.git</developerConnection>
+        <developerConnection>scm:git:ssh://github.com/jadler/jdbc-preferences.git</developerConnection>
         <url>http://github.com/jadler/jdbc-preferences/tree/main</url>
     </scm>
 
