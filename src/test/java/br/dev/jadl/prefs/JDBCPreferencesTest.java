@@ -105,4 +105,15 @@ public abstract class JDBCPreferencesTest {
                 () -> Assertions.assertTrue(prefs.nodeExists("parent/child")),
                 () -> Assertions.assertTrue(prefs.nodeExists("uncle")));
     }
+
+    @Test
+    public final void testByteArrayStorage() {
+        final Preferences prefs = Preferences.userNodeForPackage(JDBCPreferences.class);
+
+        byte[] cname = JDBCPreferences.class.getCanonicalName().getBytes();
+        prefs.putByteArray("cname", cname);
+        byte[] actual = prefs.getByteArray("cname", null);
+
+        Assertions.assertArrayEquals(cname, actual);
+    }
 }
