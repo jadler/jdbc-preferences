@@ -264,7 +264,6 @@
                 <version>3.1.1</version>
                 <configuration>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
-                    <signTag>true</signTag>
                     <scmReleaseCommitComment>Prepare release @{releaseLabel}</scmReleaseCommitComment>
                     <scmDevelopmentCommitComment>Prepare for next development iteration</scmDevelopmentCommitComment>
                     <checkModificationExcludes>
