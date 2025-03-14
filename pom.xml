@@ -238,7 +238,6 @@
                         <configuration>
                             <checksums>all</checksums>
                             <publishingServerId>central</publishingServerId>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         </configuration>
                     </plugin>
 
