@@ -3,23 +3,6 @@ package br.dev.jadl.prefs;
 import java.util.prefs.Preferences;
 import java.util.prefs.PreferencesFactory;
 
-/**
- * A JDBC-based preferences factory that implements the {@link PreferencesFactory} interface.
- * <p>
- * This class allows JDBCPreferences to be installed as the Preferences implementations via the
- * java.util.prefs.PreferencesFactory system property.
- * <p>
- * Usage:
- * <pre>
- * java -Djava.util.prefs.PreferencesFactory=br.dev.jadl.prefs.JDBCPreferencesFactory \
- *      -Dbr.dev.jadl.prefs.JDBCPreferences.user.url=jdbc:sqlite:./userprefs.sqlite \
- *      -Dbr.dev.jadl.prefs.JDBCPreferences.system.url=jdbc:sqlite:./sysprefs.sqlite \
- *      -Dbr.dev.jadl.prefs.JDBCPreferences.table=preferences:w
- * </pre>
- * 
- * @see PreferencesFactory
- * @see JDBCPreferences
- */
 public class JDBCPreferencesFactory implements PreferencesFactory {
 
     @Override

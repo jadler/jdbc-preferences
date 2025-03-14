@@ -2,29 +2,27 @@ package br.dev.jadl.prefs;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.file.Path;
 import java.util.prefs.Preferences;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class JDBCPreferencesTest {
+public abstract class JDBCPreferencesTest {
+
+    protected abstract void config();
 
     @BeforeEach
-    public void config(@TempDir final Path path) {
-        final String prefix = JDBCPreferences.class.getCanonicalName();
-        final String url = String.format("jdbc:sqlite:%s", path.resolve("database"));
-        System.setProperty(String.format("%s.url", prefix), url);
+    public final void setup() {
+        this.config();
     }
 
     @Test
     @DisplayName("Removes the preference node and all of its descendants, invalidating any preferences contained in the removed nodes.")
-    public void testRemoveNode() {
+    public final void testRemoveNode() {
         final Preferences root = Preferences.userRoot();
         final Preferences parent = root.node("parent");
         final Preferences child = parent.node("child");
@@ -42,7 +40,7 @@ class JDBCPreferencesTest {
     @ParameterizedTest
     @ValueSource(strings = {"user", "system"})
     @DisplayName("Assert that the document represents all of the preferences contained in this node and all of its descendants.")
-    public void testExportNode(final String scope) {
+    public final void testExportNode(final String scope) {
 
         final String tree = """
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -77,7 +75,7 @@ class JDBCPreferencesTest {
 
     @Test
     @DisplayName("Imports all of the preferences represented by the XML document on the specified input stream")
-    public void testImportPreferences() throws Exception {
+    public final void testImportPreferences() throws Exception {
 
         final String tree = """
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
