@@ -7,6 +7,7 @@ This project has been tested with the following databases:
 - **DuckDB**
 - **H2 Database**
 - **HSQLDB**
+- **MSSQL**
 - **PostgreSQL**
 - **SQLite**
 
@@ -46,6 +47,7 @@ The configuration should be specified using system properties. These properties 
 
 - `br.dev.jadl.prefs.JDBCPreferences.{scope}.url` - The JDBC connection URL for the database (e.g., `jdbc:mysql://localhost:3306/db`).
 - `br.dev.jadl.prefs.JDBCPreferences.{scope}.table` - The name of the table where the preferences will be stored (default is `preferences`).
+
 
 ### **Running your application**
 
