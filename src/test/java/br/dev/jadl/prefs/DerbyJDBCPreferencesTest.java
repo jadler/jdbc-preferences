@@ -2,15 +2,13 @@ package br.dev.jadl.prefs;
 
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-public class DerbyJDBCPreferencesTest extends JDBCPreferencesTest {
+public class DerbyJDBCPreferencesTest extends PreferencesTest {
 
-    @TempDir
-    private Path path;
-
-    @Override
-    protected void config() {
+    @BeforeEach
+    public void setup(final @TempDir Path path) throws ClassNotFoundException {
         System.setProperty("derby.system.home", path.toAbsolutePath().toString());
 
         final String prefix = JDBCPreferences.class.getCanonicalName();

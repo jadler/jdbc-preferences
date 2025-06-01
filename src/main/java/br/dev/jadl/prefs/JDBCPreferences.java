@@ -48,11 +48,13 @@ public class JDBCPreferences extends AbstractPreferences {
 
     @Override
     public boolean isUserNode() {
+        // AbstractPreferences#isUserNode expect Preferences#rootNode() returns a singleton;
         return this.userNode;
     }
 
     @Override
     protected void putSpi(final String key, final String value) {
+        // TODO: Modify putSpi to try add key-value if can't connect to database
         try (Connection connection = DriverManager.getConnection(this.url)) {
             this.insert(connection, key, value);
         } catch (final SQLException e) {
@@ -66,8 +68,8 @@ public class JDBCPreferences extends AbstractPreferences {
     @Override
     protected String getSpi(final String key) {
         final String query = """
-                SELECT "value" FROM %s WHERE "node" = ? AND "key" = ?
-                """.formatted(this.table);
+            SELECT "value" FROM %s WHERE "node" = ? AND "key" = ?
+            """.formatted(this.table);
 
         try (Connection connection = DriverManager.getConnection(this.url);
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -93,8 +95,8 @@ public class JDBCPreferences extends AbstractPreferences {
     @Override
     protected void removeSpi(final String key) {
         final String query = """
-                DELETE FROM %s WHERE "node" = ? AND "key" = ?
-                """.formatted(this.table);
+            DELETE FROM %s WHERE "node" = ? AND "key" = ?
+            """.formatted(this.table);
 
         try (Connection connection = DriverManager.getConnection(this.url);
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -113,28 +115,15 @@ public class JDBCPreferences extends AbstractPreferences {
     }
 
     @Override
-    protected void removeNodeSpi() throws BackingStoreException {
-        final String query = """
-                DELETE FROM %s WHERE "node" LIKE ?
-                """.formatted(this.table);
-
-        try (Connection connection = DriverManager.getConnection(this.url);
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setString(1, this.absolutePath() + "%");
-
-            statement.executeUpdate();
-
-        } catch (final SQLException e) {
-            throw new BackingStoreException(e);
-        }
+    protected void removeNodeSpi() {
+        // No-op: actual removal is handled in flushSpi() if isRemoved() is true.
     }
 
     @Override
     protected String[] keysSpi() throws BackingStoreException {
         final String query = """
-                SELECT "key" FROM %s WHERE "node" = ? AND "key" IS NOT NULL
-                """.formatted(this.table);
+            SELECT "key" FROM %s WHERE "node" = ? AND "key" IS NOT NULL
+            """.formatted(this.table);
 
         try (Connection connection = DriverManager.getConnection(this.url);
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -157,46 +146,33 @@ public class JDBCPreferences extends AbstractPreferences {
     }
 
     @Override
-    protected String[] childrenNamesSpi() {
-
+    protected String[] childrenNamesSpi() throws BackingStoreException {
         final String query = """
-                SELECT "node" FROM %s
-                WHERE "key" = ?
-                  AND "node" <> ?
-                  AND "node" LIKE ?
-                  AND "node" NOT LIKE ?
-                """.formatted(this.table);
+            SELECT "node" FROM %s
+            WHERE "key" = '' AND "node" <> ? AND "node" LIKE ? AND "node" NOT LIKE ?
+            """.formatted(this.table);
 
         try (Connection connection = DriverManager.getConnection(this.url);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             final String prefix = (this.parent() == null) ? "" : this.absolutePath();
 
-            statement.setString(1, "");
-            statement.setString(2, this.absolutePath());
-            statement.setString(3, prefix + "/%");
-            statement.setString(4, prefix + "/%/%");
+            statement.setString(1, this.absolutePath());
+            statement.setString(2, prefix + "/%");
+            statement.setString(3, prefix + "/%/%");
 
             final ResultSet result = statement.executeQuery();
             final Collection<String> children = new ArrayList<>();
             while (result.next()) {
-                final String node = result
-                    .getString("node")
-                    .replaceFirst(prefix + "/", "");
-
-                children.add(node);
+                final String node = result.getString("node");
+                children.add(node.replaceFirst(prefix + "/", ""));
             }
 
             return children.toArray(String[]::new);
 
         } catch (final SQLException e) {
-            logger.log(ERROR, e.getMessage());
-            if (logger.isLoggable(TRACE)) {
-                e.printStackTrace();
-            }
+            throw new BackingStoreException(e);
         }
-
-        return new String[0];
     }
 
     @Override
@@ -222,7 +198,21 @@ public class JDBCPreferences extends AbstractPreferences {
 
     @Override
     protected void flushSpi() {
-        // No-op as the data is immediately persisted
+        if (isRemoved()) {
+            final String query = """
+                DELETE FROM %s WHERE "node" LIKE ?
+                """.formatted(this.table);
+
+            try (Connection connection = DriverManager.getConnection(this.url);
+                    PreparedStatement statement = connection.prepareStatement(query)) {
+
+                statement.setString(1, this.absolutePath() + "%");
+
+                statement.executeUpdate();
+
+            } catch (final SQLException e) {
+            }
+        }
     }
 
     private void create(final Connection connection) {
@@ -230,14 +220,14 @@ public class JDBCPreferences extends AbstractPreferences {
 
             final String create = """
                 CREATE TABLE %s (
-                        "node" VARCHAR(255) NOT NULL,
-                        "key" VARCHAR(255) NOT NULL,
-                        "value" VARCHAR(8000),
-                        PRIMARY KEY ("node", "key"),
-                        CONSTRAINT chk_key_value CHECK (
-                            ("key" = '' AND "value" IS NULL)
-                            OR ("key" <> '' AND "value" IS NULL)
-                            OR ("key" <> '' AND "value" IS NOT NULL)))
+                    "node" VARCHAR(255) NOT NULL,
+                    "key" VARCHAR(255) NOT NULL,
+                    "value" VARCHAR(8000),
+                PRIMARY KEY ("node", "key"),
+                CONSTRAINT chk_key_value CHECK (
+                    ("key" = '' AND "value" IS NULL)
+                 OR ("key" <> '' AND "value" IS NULL)
+                 OR ("key" <> '' AND "value" IS NOT NULL)))
                 """.formatted(this.table);
 
             statement.execute(create);
@@ -255,8 +245,8 @@ public class JDBCPreferences extends AbstractPreferences {
 
     private boolean exists(final Connection connection, final String key) {
         final String query = """
-                SELECT count(*) FROM %s WHERE "node" = ? AND "key" = ?
-                """.formatted(this.table);
+            SELECT count(*) FROM %s WHERE "node" = ? AND "key" = ?
+            """.formatted(this.table);
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -283,8 +273,8 @@ public class JDBCPreferences extends AbstractPreferences {
         }
 
         final String query = """
-                INSERT INTO %s ("node", "key", "value") VALUES (?, ?, ?)
-                """.formatted(this.table);
+            INSERT INTO %s ("node", "key", "value") VALUES (?, ?, ?)
+            """.formatted(this.table);
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -304,8 +294,8 @@ public class JDBCPreferences extends AbstractPreferences {
 
     private void update(final Connection connection, final String key, final String value) {
         final String query = """
-                UPDATE %s SET "value" = ? WHERE "node" = ? AND "key" = ?
-                """.formatted(this.table);
+            UPDATE %s SET "value" = ? WHERE "node" = ? AND "key" = ?
+            """.formatted(this.table);
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
 
