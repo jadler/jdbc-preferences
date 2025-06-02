@@ -35,7 +35,7 @@ Add the following dependency into yout project:
 <dependency>
     <groupId>br.dev.jadl.preferences</groupId>
     <artifactId>jdbc-preferences</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
